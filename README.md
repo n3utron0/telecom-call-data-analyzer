@@ -4,6 +4,7 @@ AI-Powered Call Transcription, Analytics & Customer Support Insights
 ## Overview
 This project is an async, cloud-native backend system designed for telecom customer support teams.
 It ingests customer call recordings, converts them into structured data using an LLM, stores the results in BigQuery, and enables analytics and natural-language querying over historical call data.
+
 The system is built with controlled LLM usage, strong validation boundaries, and human-in-the-loop safeguards to ensure data reliability.
 
 ## Key Capabilities
@@ -53,23 +54,41 @@ graph TD
 ## Project Structure
 telecom-call-data-analyzer/
 │
+
 ├── core/
+
 │   ├── utils_core.py        # Async pipeline orchestration
+
 │   ├── utils_gcs.py         # GCS upload & cleanup
+
 │   ├── utils_gemini.py      # Gemini audio processing
+
 │   ├── utils_bq.py          # BigQuery inserts
+
 │   ├── query_utils.py       # NL → SQL chatbot logic
+
 │   └── config.py            # Environment & client setup
+
 │
+
 ├── frontend/
+
 │   ├── index.html           # Call analyzer UI
+
 │   └── chat.html            # Analytics chatbot UI
+
 │
+
 ├── models.py                # Pydantic models & prompts
+
 ├── main.py                  # FastAPI entry point
+
 ├── requirements.txt
+
 ├── .env.example
+
 ├── .gitignore
+
 └── README.md
 
 ## How the System Works
@@ -139,8 +158,10 @@ uvicorn main:app --reload
 ```
 
 **Open in browser:**
+
 http://127.0.0.1:8000
  → Call Analyzer
+
 http://127.0.0.1:8000/chat
  → Analytics Chatbot
 
