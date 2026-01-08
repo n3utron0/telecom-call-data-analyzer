@@ -128,11 +128,11 @@ Create a .env file using .env.example as reference:
 **5. Authenticate with Google Cloud**
 Set your service account credentials:
 ```
-(Command Prompt)
 export GOOGLE_APPLICATION_CREDENTIALS="path/to/service_account.json"
 ```
-```
+
 (Windows PowerShell)
+```
 setx GOOGLE_APPLICATION_CREDENTIALS "path\to\service_account.json"
 ```
 **6. Run the Application**
