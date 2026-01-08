@@ -52,46 +52,28 @@ graph TD
 - Lightweight UI for validation & querying
 
 ## Project Structure
+```
 telecom-call-data-analyzer/
-
 │
-
 ├── core/
-
 │   ├── utils_core.py        # Async pipeline orchestration
-
 │   ├── utils_gcs.py         # GCS upload & cleanup
-
 │   ├── utils_gemini.py      # Gemini audio processing
-
 │   ├── utils_bq.py          # BigQuery inserts
-
 │   ├── query_utils.py       # NL → SQL chatbot logic
-
 │   └── config.py            # Environment & client setup
-
 │
-
 ├── frontend/
-
 │   ├── index.html           # Call analyzer UI
-
 │   └── chat.html            # Analytics chatbot UI
-
 │
-
 ├── models.py                # Pydantic models & prompts
-
 ├── main.py                  # FastAPI entry point
-
 ├── requirements.txt
-
 ├── .env.example
-
 ├── .gitignore
-
 └── README.md
-
+```
 ## How the System Works
 ### 1. Single Call Upload (Human-in-the-Loop)
 - User uploads a call recording
