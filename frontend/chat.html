@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Call Insights Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Dark Mode Palette */
+            --primary-color: #3b82f6;
+            /* Blue-500 - Accent */
+            --primary-hover: #2563eb;
+            /* Blue-600 */
+            --bg-dark: #0f172a;
+            /* Slate-900 for main background */
+            --card-bg: #1f2937;
+            /* Gray-800 for chat container */
+            --input-bg: #374151;
+            /* Gray-700 for input fields */
+            --text-light: #e5e7eb;
+            /* Gray-200 for general text */
+            --message-user-bg: #1d4ed8;
+            /* Blue-700 */
+            --message-bot-bg: #374151;
+            /* Gray-700 */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 85vh;
+            /* Take up most of the viewport height */
+            display: flex;
+            flex-direction: column;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            padding: 20px;
+        }
+
+        h2 {
+            font-weight: 700;
+            color: #f3f4f6;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            border-bottom: 1px solid #4b5563;
+            padding: 15px;
+            margin-bottom: 15px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 12px 18px;
+            border-radius: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+            line-height: 1.5;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .user {
+            background-color: var(--message-user-bg);
+            color: white;
+            margin-left: auto;
+            border-top-right-radius: 4px;
+            /* Slight corner adjustment for chat bubbles */
+        }
+
+        .bot {
+            background-color: var(--message-bot-bg);
+            color: var(--text-light);
+            margin-right: auto;
+            border-top-left-radius: 4px;
+            /* Slight corner adjustment for chat bubbles */
+        }
+
+        /* Ensure lists look good inside the bot bubble */
+        .bot ul {
+            list-style: disc;
+            margin-left: 20px;
+            padding-left: 0;
+            margin-top: 5px;
+        }
+
+        #input-area {
+            display: flex;
+            gap: 10px;
+        }
+
+        #userInput {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #333;
+            /* Use a fixed dark border */
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--text-light);
+            transition: border-color 0.3s;
+        }
+
+        #userInput:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            border: none;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+        }
+
+        button:disabled {
+            background-color: #374151;
+            /* Disabled color */
+            cursor: not-allowed;
+            color: #9ca3af;
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #93c5fd;
+            /* Blue-300 */
+            font-weight: 500;
+            margin-bottom: 15px;
+            display: block;
+            text-align: left;
+        }
+
+        .back-link:hover {
+            color: #60a5fa;
+            /* Blue-400 */
+        }
+
+        /* Loading animation for bot response */
+        .loading-dots {
+            display: inline-block;
+            margin-left: 5px;
+            width: 8px;
+            height: 8px;
+            background-color: #f3f4f6;
+            border-radius: 50%;
+            animation: dot-pulse 1s infinite;
+        }
+
+        .loading-dots:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes dot-pulse {
+
+            0%,
+            80%,
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="chat-container">
+        <a href="/" class="back-link">
+            ← Back to Call Analyzer
+        </a>
+        <h2 style="color: var(--primary-color);">📊 Call Insights Chatbot</h2>
+
+        <div id="messages">
+            <!-- Initial Bot Message -->
+            <div class="message bot">
+                Hello! I can help you analyze the uploaded call records. You can ask me questions like:
+                <ul>
+                    <li>"What is the total number of unresolved complaints?"</li>
+                    <li>"Summarize the sentiment for 'Network Issue' complaints."</li>
+                    <li>"How many rows are there?"</li>
+                </ul>
+            </div>
+        </div>
+        <div id="input-area">
+            <input type="text" id="userInput" placeholder="Ask about complaints, sentiments, resolutions..."
+                onkeypress="if(event.key === 'Enter') sendMessage()" />
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Placeholder for simulating loading until API response
+        function getLoadingDotsHTML() {
+            return `
+                <span class="flex items-center space-x-1">
+                    <span class="loading-dots"></span>
+                    <span class="loading-dots"></span>
+                    <span class="loading-dots"></span>
+                </span>
+            `;
+        }
+
+        // This function handles the actual communication and display logic
+        async function sendMessage() {
+            const input = document.getElementById("userInput");
+            const messagesDiv = document.getElementById("messages");
+            const sendButton = document.querySelector("button");
+            const userMsg = input.value.trim();
+
+            if (!userMsg) return;
+
+            // 1. Show user message
+            messagesDiv.innerHTML += `<div class="message user">${userMsg}</div>`;
+            input.value = "";
+
+            // Disable input while loading
+            input.disabled = true;
+            sendButton.disabled = true;
+
+            // 2. Show loading placeholder
+            messagesDiv.innerHTML += `<div class="message bot" id="loadingMessage">${getLoadingDotsHTML()}</div>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+            // Reference the loading message element
+            const loadingMsg = document.getElementById("loadingMessage");
+
+
+            try {
+                // Fetch call to the simulated backend endpoint
+                const res = await fetch("/chatbot_query", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ query: userMsg })
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Server responded with status: ${res.status}`);
+                }
+
+                const data = await res.json();
+
+                // 3. Update loading message with response
+                loadingMsg.innerHTML = data.answer || "Sorry, I couldn’t find anything. Please try another query.";
+                loadingMsg.removeAttribute("id"); // Remove ID after use
+
+            } catch (err) {
+                // 3. Update loading message with error
+                loadingMsg.innerHTML = "⚠️ Error connecting to chatbot or server.";
+                loadingMsg.removeAttribute("id");
+                console.error("Chatbot Error:", err);
+            }
+
+            // Re-enable input
+            input.disabled = false;
+            sendButton.disabled = false;
+            input.focus();
+
+            // Scroll to bottom
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCDA - Telecom Call Analyzer</title>
+    <style>
+        /* --- General Setup --- */
+        :root {
+            --bg-dark: #101010;
+            --bg-med: #1a1a1a;
+            --bg-light: #2a2a2a;
+            --text-light: #f0f0f0;
+            --text-med: #aaa;
+            --accent: #4ee;
+            /* Cyan/Teal accent */
+            --accent-dark: #101010;
+            --border-color: #333;
+            --success: #28a745;
+            --danger: #dc3545;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* --- Layout --- */
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+        }
+
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            color: var(--accent);
+            margin: 0;
+        }
+
+        .main-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+        }
+
+        .upload-column {
+            flex: 2;
+            /* Takes 2/3 of the space */
+            min-width: 300px;
+        }
+
+        .metrics-column {
+            flex: 1;
+            /* Takes 1/3 of the space */
+            min-width: 300px;
+        }
+
+        .card {
+            background: var(--bg-med);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            color: var(--text-light);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        /* --- Elements --- */
+        a,
+        a:visited {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        a:hover {
+            filter: brightness(1.2);
+            text-decoration: underline;
+        }
+
+        button {
+            background: var(--accent);
+            color: var(--accent-dark);
+            border: none;
+            padding: 12px 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            filter: brightness(1.2);
+        }
+
+        button:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+            filter: none;
+        }
+
+        /* Special button styles */
+        #confirm-btn {
+            background: var(--success);
+            color: white;
+            width: 100%;
+        }
+
+        button.secondary {
+            background: var(--bg-light);
+            color: var(--text-light);
+            border: 1px solid var(--border-color);
+        }
+
+        input[type="text"],
+        input[type="file"],
+        textarea,
+        select {
+            background: var(--bg-light);
+            color: var(--text-light);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            width: 100%;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: none;
+            overflow-y: hidden;
+            font-family: "Courier New", Courier, monospace;
+            /* Monospace for transcription */
+        }
+
+        /* Style for readonly inputs */
+        input[readonly] {
+            background-color: #0c0c0c;
+            color: var(--text-med);
+            cursor: not-allowed;
+        }
+
+        input[type="file"] {
+            padding: 9px;
+            width: auto;
+            flex-grow: 1;
+        }
+
+        /* --- Forms & Results --- */
+        #upload-form,
+        .batch-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #upload-form button {
+            flex-shrink: 0;
+        }
+
+        /* Editor container for the record fields */
+        #call-record-editor {
+            display: grid;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .form-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-field label {
+            font-weight: bold;
+            color: var(--text-med);
+            margin-bottom: 5px;
+            text-transform: capitalize;
+        }
+
+        /* Group for inline items like Resolved checkbox */
+        .inline-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Result/Metrics pre tag */
+        #batch-result,
+        #metrics {
+            background: #000;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-family: "Courier New", Courier, monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-top: 20px;
+            color: #e0e0e0;
+        }
+
+        /* --- Spinner Overlay (Keep for UX) --- */
+        .spinner-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            border: 8px solid var(--bg-light);
+            border-top: 8px solid var(--accent);
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Spinner Overlay -->
+    <div class="spinner-overlay" id="spinner-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>📞 Telecom Call Data Analyzer (TCDA)</h1>
+            <a href="/chat">💬 Go to Chatbot</a>
+        </div>
+
+        <div class="main-layout">
+
+            <!-- Left Column: Uploads -->
+            <div class="upload-column">
+                <!-- Single File Upload Card -->
+                <div class="card">
+                    <h2>🎧 Upload Single Audio File</h2>
+                    <form id="upload-form">
+                        <input type="file" id="audio-file" name="file" accept=".wav,.mp3" required />
+                        <button type="submit">Upload & Analyze</button>
+                    </form>
+
+                    <!-- EXPLICITLY DEFINED FIELDS -->
+                    <div id="call-record-editor" style="display: none;">
+                        <h3
+                            style="color: var(--accent); margin-top: 0; padding-bottom: 5px; border-bottom: 1px solid var(--border-color);">
+                            📝 Analysis Results</h3>
+
+                        <!-- Phone Number -->
+                        <div class="form-field">
+                            <label for="phone_number">Phone Number</label>
+                            <input type="text" id="phone_number" placeholder="Enter phone number if missing" />
+                        </div>
+
+                        <!-- Time Taken (Readonly) - NEW FIELD -->
+                        <div class="form-field">
+                            <label for="time_taken">Time Taken (Readonly)</label>
+                            <input type="text" id="time_taken" readonly placeholder="Calculated time" />
+                        </div>
+
+                        <!-- Complaint Type (Dropdown) -->
+                        <div class="form-field">
+                            <label for="complaint_type">Complaint Type</label>
+                            <select id="complaint_type">
+                                <option value="Recharge Issue">Recharge Issue</option>
+                                <option value="Payment Issue">Payment Issue</option>
+                                <option value="Network Issue">Network Issue</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+
+                        <!-- Customer Sentiment (Dropdown) -->
+                        <div class="form-field">
+                            <label for="customer_sentiment">Customer Sentiment</label>
+                            <select id="customer_sentiment">
+                                <option value="Positive">Positive</option>
+                                <option value="Neutral">Neutral</option>
+                                <option value="Negative">Negative</option>
+                            </select>
+                        </div>
+
+                        <!-- Resolved Checkbox -->
+                        <div class="form-field">
+                            <div class="inline-group">
+                                <label for="resolved" style="margin-bottom: 0;">Resolved?</label>
+                                <input type="checkbox" id="resolved" style="width: auto; margin: 0; height: 20px;" />
+                            </div>
+                        </div>
+
+                        <!-- Transcription (Auto-Resize FIX) -->
+                        <div class="form-field">
+                            <label for="transcription">Full Transcription</label>
+                            <textarea id="transcription"
+                                placeholder="Full call transcript will appear here..."></textarea>
+                        </div>
+
+                    </div>
+
+                    <div id="result-placeholder" style="color: var(--text-med); margin-top: 20px;">Awaiting analysis...
+                    </div>
+
+                    <!-- Confirm Button -->
+                    <button id="confirm-btn" style="display:none; margin-top:20px;">✅ Confirm & Save Record</button>
+                </div>
+
+                <!-- Batch Upload Card -->
+                <div class="card">
+                    <h2>📦 Batch Upload (Local Folder)</h2>
+                    <div class="batch-controls">
+                        <input type="text" id="folderInput" placeholder="Enter full local folder path..." />
+                        <button onclick="startBatchUpload()" class="secondary">Start Batch Upload</button>
+                    </div>
+
+                    <pre id="batch-result" style="display: none;"></pre>
+                </div>
+            </div>
+
+            <!-- Right Column: Metrics -->
+            <div class="metrics-column">
+                <div class="card">
+                    <h2>⚙️ Live Metrics</h2>
+                    <pre id="metrics">Loading metrics...</pre>
+                    <button onclick="resetMetrics()" class="secondary" style="width: 100%; margin-top: 15px;">🔄 Reset
+                        Metrics</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Store for original record data
+        window.originalRecord = {};
+
+        // --- Helper function for auto-resizing textareas ---
+        function autoResizeTextarea(el) {
+            // Set the height back to 'auto' to correctly calculate the new scrollHeight
+            el.style.height = 'auto';
+            // Set height to scroll height, plus a tiny buffer for robustness (2px)
+            el.style.height = (el.scrollHeight + 2) + 'px';
+        }
+
+        // --- Spinner Controls ---
+        function showSpinner() {
+            document.getElementById('spinner-overlay').style.display = 'flex';
+        }
+        function hideSpinner() {
+            document.getElementById('spinner-overlay').style.display = 'none';
+        }
+
+        // --- File Input Change Listener ---
+        document.getElementById("audio-file").addEventListener("change", () => {
+            document.getElementById("confirm-btn").style.display = "none";
+            document.getElementById("call-record-editor").style.display = "none";
+            document.getElementById("result-placeholder").innerText = 'Select a file and click "Upload & Analyze".';
+        });
+
+
+        // --- Single File Upload ---
+        document.getElementById("upload-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const file = document.getElementById("audio-file").files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const placeholder = document.getElementById("result-placeholder");
+            placeholder.innerText = '⏳ Uploading and analyzing...';
+
+            document.getElementById("confirm-btn").style.display = "none";
+            document.getElementById("call-record-editor").style.display = "none";
+
+            showSpinner();
+
+            try {
+                const res = await fetch("/upload_audio", { method: "POST", body: formData });
+                const data = await res.json();
+
+                if (data.status === "success") {
+                    window.originalRecord = data.data; // Store the original record
+                    populateFormFields(data.data);
+
+                    placeholder.innerText = 'Results loaded. Review and Confirm below.';
+                    document.getElementById("call-record-editor").style.display = "grid";
+                    document.getElementById("confirm-btn").style.display = "block";
+
+                } else {
+                    placeholder.innerHTML = `<span style="color: var(--danger);">⚠️ Error: ${data.detail || "Unknown error"}</span>`;
+                }
+            } catch (err) {
+                placeholder.innerHTML = `<span style="color: var(--danger);">❌ Upload failed: ${err}</span>`;
+            } finally {
+                hideSpinner();
+            }
+        });
+
+        function populateFormFields(data) {
+            // Set static fields
+            document.getElementById("phone_number").value = data.phone_number || "";
+
+            // Set NEW time taken field (read-only)
+            // Look for 'processing_time_sec' first, then fall back to 'time_taken'
+            const timeVal = data.processing_time_sec || data.time_taken;
+            document.getElementById("time_taken").value = timeVal ? `${timeVal} seconds` : "N/A";
+
+            // Set dropdowns (FIX)
+            document.getElementById("complaint_type").value = data.complaint_type || "Others";
+            document.getElementById("customer_sentiment").value = data.customer_sentiment || "Neutral";
+
+            // Set checkbox
+            // Since data.resolved might be boolean or a string 'true'/'false', check robustly
+            const isResolved = data.resolved === true || String(data.resolved).toLowerCase() === 'true';
+            document.getElementById("resolved").checked = isResolved;
+
+            // Set Textareas (FIXED Auto-Resize)
+            const transcriptionEl = document.getElementById("transcription");
+            transcriptionEl.value = data.transcription || data.transcript || "No transcription available.";
+
+            // Attach listener for dynamic resize if not already attached, and force initial resize
+            transcriptionEl.oninput = () => autoResizeTextarea(transcriptionEl);
+
+            // Must be called after element is appended and content set
+            setTimeout(() => {
+                autoResizeTextarea(transcriptionEl);
+            }, 50);
+        }
+
+        // --- Confirm (Edited) Upload ---
+        document.getElementById("confirm-btn").addEventListener("click", async () => {
+            if (!window.originalRecord) {
+                return alert("No valid record to confirm!");
+            }
+
+            // Collect all current values from the explicit fields
+            const finalRecord = {
+                // Ensure all original fields are kept, and overwrite with current form data
+                ...window.originalRecord,
+
+                phone_number: document.getElementById("phone_number").value,
+                complaint_type: document.getElementById("complaint_type").value,
+                customer_sentiment: document.getElementById("customer_sentiment").value,
+                resolved: document.getElementById("resolved").checked, // Send boolean
+                transcription: document.getElementById("transcription").value,
+                // Time taken is implicitly included from window.originalRecord
+            };
+
+            const confirmBtn = document.getElementById("confirm-btn");
+            confirmBtn.innerText = "Saving...";
+            confirmBtn.disabled = true;
+            showSpinner();
+
+            try {
+                const res = await fetch("/confirm_upload", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(finalRecord),
+                });
+                const data = await res.json();
+                alert(data.message || "✅ Record saved successfully!");
+                confirmBtn.innerText = "✅ Record Saved!";
+                document.getElementById("result-placeholder").innerText = "Record saved. Upload a new file.";
+            } catch (err) {
+                alert("❌ Save failed: " + err);
+                confirmBtn.innerText = "✅ Confirm & Save Record";
+                confirmBtn.disabled = false;
+            } finally {
+                hideSpinner();
+            }
+        });
+
+        // --- Batch Upload (Retained logic) ---
+        async function startBatchUpload() {
+            const folderPath = document.getElementById("folderInput").value;
+            if (!folderPath) return alert("Please enter a folder path.");
+
+            const batchResult = document.getElementById("batch-result");
+            batchResult.style.display = "block";
+            batchResult.innerText = "🚀 Starting batch upload...";
+
+            showSpinner();
+
+            try {
+                const response = await fetch("/upload_batch", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ folder_path: folderPath }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server error: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                batchResult.innerText = "✅ Batch Complete:\n" + JSON.stringify(result.details || result, null, 2);
+
+            } catch (err) {
+                batchResult.innerText = `❌ Batch failed! Error: ${err}`;
+            } finally {
+                hideSpinner();
+            }
+        }
+
+
+        // --- Metrics Fetch + Reset (Retained logic) ---
+        async function fetchMetrics() {
+            try {
+                const res = await fetch("/metrics");
+                const data = await res.json();
+                document.getElementById("metrics").innerText = JSON.stringify(data.summary, null, 2);
+            } catch {
+                document.getElementById("metrics").innerText = "⚠️ Metrics fetch failed.";
+            }
+        }
+
+        async function resetMetrics() {
+            if (!confirm("Are you sure you want to reset all metrics?")) return;
+            try {
+                showSpinner();
+                await fetch("/reset_metrics", { method: "POST" });
+                alert("✅ Metrics reset.");
+                fetchMetrics();
+            } catch (err) {
+                alert("❌ Metric reset failed: " + err);
+            } finally {
+                hideSpinner();
+            }
+        }
+
+        // Start polling metrics on page load
+        setInterval(fetchMetrics, 10000);
+        fetchMetrics();
+
+    </script>
+</body>
+
+</html>
